@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # --------------------------------------------------------------------------------------------------------------------
+  # База данных postgres
+  # --------------------------------------------------------------------------------------------------------------------
+  db:
+    image: postgres:14-alpine
+    volumes:
+      - db-vol:/var/lib/postgresql/data
+    container_name: database
+    user: postgres
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+  # --------------------------------------------------------------------------------------------------------------------
+  # --------------------------------------------------------------------------------------------------------------------
+  # Сервер python/django
+  # --------------------------------------------------------------------------------------------------------------------
+  server:
+    depends_on:
+      - db
+    build: .
+    container_name: server
+    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - django-media:/usr/portal/server/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db
+    env_file:
+      - .env.dev
+  # --------------------------------------------------------------------------------------------------------------------
+volumes:
+  db-vol:
+  django-media:

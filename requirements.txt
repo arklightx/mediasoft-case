@@ -1,0 +1,9 @@
+setuptools
+wheel
+psycopg2-binary
+django
+djangorestframework
+django-filter
+django-cors-headers
+pillow
+dotenv
