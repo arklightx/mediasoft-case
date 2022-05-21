@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'django_filters',
-    'streeter.apps.StreeterConfig'
+    'streeter.apps.StreeterConfig',
 ]
 
 REST_FRAMEWORK = {

@@ -59,21 +59,22 @@ docker compose --env-file .env.dev --file docker-compose.yml up -d
 * Возможные query параметры
   * У всех доступен `?ordered_by=id/-id`. id - по возрастанию id, -id - по убыванию
   * У shop по мимо сортировки доступны `?street=...`, `?city=...`, `?open=...`. Могут применяться в любой комбинации.
-* POST запросы. Примеры
-  * `/api/v1/city/`
+---
+### POST запросы. Примеры
+* `/api/v1/city/`
 ```json
 {
     "name": "Ульяновск"
 }
 ```
-  * `/api/v1/street/` Для указания города используется id города
+* `/api/v1/street/` Для указания города используется id города
 ```json
 {
     "name": "ASd",
     "city": 1
 }
 ```
-  * `/api/v1/shop/` Если у города нет улицы, которая указана в запросе, вернётся 400 статус код
+* `/api/v1/shop/` Если у города нет улицы, которая указана в запросе, вернётся 400 статус код
 ```json
 {
     "name": "qwe",
@@ -84,8 +85,9 @@ docker compose --env-file .env.dev --file docker-compose.yml up -d
     "street": 4
 }
 ```
-* GET запросы
-  * `/api/v1/city/`
+---
+### GET запросы. Примеры
+* `/api/v1/city/`
 ```json
 [
     {
@@ -102,7 +104,7 @@ docker compose --env-file .env.dev --file docker-compose.yml up -d
     }
 ]
 ```
-  * `/api/v1/city/2/street/?ordered_by=-id` (по убыванию id)
+* `/api/v1/city/2/street/?ordered_by=-id` (по убыванию id)
 ```json
 [
     {
@@ -131,7 +133,8 @@ docker compose --env-file .env.dev --file docker-compose.yml up -d
     }
 ]
 ```
-  * `/api/v1/shop/?city=Ульяновск&ordered_by=-id&open=1` (в рамках ТЗ можно добавлять и удалять параметры из запросы)
+* `/api/v1/shop/?city=Ульяновск&ordered_by=-id&open=1` (в рамках ТЗ можно добавлять и удалять параметры из запросы)
+  * P.S.: запускалось в 10:44, поэтому при open=1 вернулись эти данные
 ```json
 [
     {
@@ -192,4 +195,36 @@ docker compose --env-file .env.dev --file docker-compose.yml up -d
         "close_time": "22:00:00"
     }
 ]
+```
+---
+### PATCH запросы. Примеры
+* `/api/v1/shop/1/`
+```json
+{
+    // Request
+    "name": "Крутятся пластинки",
+    "street": 4
+}
+```
+```json
+{
+    // Response
+    "id": 1,
+    "city": {
+        "id": 2,
+        "name": "Ульяновск"
+    },
+    "street": {
+        "id": 4,
+        "city": {
+            "id": 2,
+            "name": "Ульяновск"
+        },
+        "name": "Тимирязева"
+    },
+    "name": "Крутятся пластинки",
+    "house": "11/qwe",
+    "open_time": "17:37:00",
+    "close_time": "18:35:00"
+}
 ```
