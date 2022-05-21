@@ -6,4 +6,4 @@ djangorestframework
 django-filter
 django-cors-headers
 pillow
-dotenv
+python-dotenv

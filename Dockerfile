@@ -1,4 +1,4 @@
-FROM python:3.10.1-buster
+FROM python:3.10.4-buster
 WORKDIR /usr/portal/server/
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
