@@ -16,7 +16,7 @@ class CityViewSet(ModelViewSet):
     permission_classes = [AllowAny]
     serializer_class = CitySerializer
     ordering_fields = ["id"]
-    # http_method_names = ["GET", "POST", "PATCH", "DELETE"]
+    http_method_names = ["get", "post", "patch", "delete"]
 
 
 class StreetViewSet(ModelViewSet):
@@ -24,6 +24,7 @@ class StreetViewSet(ModelViewSet):
     permission_classes = [AllowAny]
     serializer_class = StreetSerializer
     ordering_fields = ["id"]
+    http_method_names = ["get", "post", "patch", "delete"]
 
     def create(self, request: Request, *args, **kwargs):
         street = Street.objects.create(
@@ -46,6 +47,7 @@ class ShopViewSet(ModelViewSet):
     serializer_class = ShopSerializer
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["id"]
+    http_method_names = ["get", "post", "patch", "delete"]
 
     def list(self, request: Request, *args, **kwargs) -> Response:
         query: dict = request.query_params
