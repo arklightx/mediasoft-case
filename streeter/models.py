@@ -35,35 +35,22 @@ class Shop(models.Model):
     class Meta:
         ordering = ["id"]
 
-    def compare_date(self) -> bool:
-        """
-        Возвращает True, если время открытия меньше времени закрытия (10:00-22:00) и
-        возвращает False, если время открытия больше времени закрытия (22:00-10:00)
-        :return: bool
-        """
-        if self.open_time > self.close_time:
-            return False
-        else:
-            return True
-
-    def is_open(self, current_time: time) -> bool:
+    @property
+    def is_open(self) -> bool:
         # 22:00-02:00, 21:24
         # 22:00 <= 21:24 True                   <--|-\
         # <========================================|===========<|>
         # 02:00+24:00=26:00 >= 21:24 True       <--|-/
+        current_time = datetime.now().time()
         if self.open_time > self.close_time:
             th, tm, ts = self.close_time.hour, self.close_time.minute, self.close_time.second
             new_close_time = datetime(year=1, month=1, day=2, hour=th, minute=tm, second=ts)
-            new_current_time = datetime(year=1, month=1, day=1, hour=current_time.hour, minute=current_time.minute, second=current_time.second)
-            if (self.open_time <= current_time) and (new_close_time >= new_current_time):
-                return True
-            else:
-                return False
+            new_current_time = datetime(year=1, month=1, day=1, hour=current_time.hour, minute=current_time.minute,
+                                        second=current_time.second)
+            # @TODO убрать этот позор после тестов
+            return (self.open_time <= current_time) and (new_close_time >= new_current_time)
         else:
-            if (self.open_time <= current_time) and (self.close_time >= current_time):
-                return True
-            else:
-                return False
+            return (self.open_time <= current_time) and (self.close_time >= current_time)
 
     def __str__(self):
         return f"{self.id}. {self.city.name} -> {self.name}"

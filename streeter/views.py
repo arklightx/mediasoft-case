@@ -1,5 +1,4 @@
 import datetime
-import operator
 import re
 
 from rest_framework.request import Request
@@ -8,7 +7,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework import filters
-from .serializers import StreetSerializer, Street, ShopSerializer, Shop, CitySerializer, City
+from .serializers import StreetSerializer, Street, ShopSerializer, Shop, CitySerializer, City, ShopReturnSerializer
 
 
 class CityViewSet(ModelViewSet):
@@ -16,7 +15,7 @@ class CityViewSet(ModelViewSet):
     permission_classes = [AllowAny]
     serializer_class = CitySerializer
     ordering_fields = ["id"]
-    # http_method_names = ["GET", "POST", "PATCH", "DELETE"]
+    http_method_names = ["get", "post", "patch", "delete"]
 
 
 class StreetViewSet(ModelViewSet):
@@ -24,6 +23,7 @@ class StreetViewSet(ModelViewSet):
     permission_classes = [AllowAny]
     serializer_class = StreetSerializer
     ordering_fields = ["id"]
+    http_method_names = ["get", "post", "patch", "delete"]
 
     def create(self, request: Request, *args, **kwargs):
         street = Street.objects.create(
@@ -46,6 +46,7 @@ class ShopViewSet(ModelViewSet):
     serializer_class = ShopSerializer
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["id"]
+    http_method_names = ["get", "post", "patch", "delete"]
 
     def list(self, request: Request, *args, **kwargs) -> Response:
         query: dict = request.query_params
@@ -59,19 +60,8 @@ class ShopViewSet(ModelViewSet):
                 shops = shops.order_by(ordered_by)
             open_arg = query.get("open")
             if open_arg:
-                is_open = int(open_arg)
-                current_time = datetime.datetime.now().time()
-                new_shop_list = []
-                if is_open:
-                    for shop in shops:
-                        if shop.is_open(current_time):
-                            new_shop_list.append(shop)
-                else:
-                    for shop in shops:
-                        if not shop.is_open(current_time):
-                            new_shop_list.append(shop)
-                data = ShopSerializer(new_shop_list, many=True).data
-                return Response(data, status=200)
+                is_open = bool(int(open_arg))
+                shops = [shop for shop in shops if shop.is_open is is_open]
             data = ShopSerializer(shops, many=True).data
             return Response(data, status=200)
         else:
@@ -79,57 +69,21 @@ class ShopViewSet(ModelViewSet):
 
     def create(self, request: Request, *args, **kwargs) -> Response:
         try:
-            if not is_valid_time(request.data.get("open_time")) or not is_valid_time(request.data.get("close_time")):
-                raise Exception("Неправильный формат времени")
-
-            street_candidate = Street.objects.get(id=request.data.get("street"))
-            if street_candidate.city.id != int(request.data.get("city")):
-                raise Exception("Улица не относится к указанному городу")
-
-            shop = Shop.objects.create(
-                name=request.data.get("name"),
-                house=request.data.get("house"),
-                open_time=request.data.get("open_time"),
-                close_time=request.data.get("close_time"),
-                city_id=request.data.get("city"),
-                street_id=request.data.get("street")
-            )
+            serializer = super().get_serializer_class()
+            serializer_instance: ShopSerializer = serializer(data=request.data)
+            serializer_instance.is_valid(raise_exception=True)
+            shop = serializer_instance.save(**serializer_instance.validated_data)
+            return Response(ShopReturnSerializer(shop).data, status=201)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
-        data = ShopSerializer(shop).data
-        return Response(data, status=201)
 
     def partial_update(self, request: Request, *args, **kwargs) -> Response:
         try:
-            shop = Shop.objects.get(id=kwargs.get("pk"))
-            # @TODO проработать тут обновление города и улицы, а также наборот (улицы и города)
-            if "city" in request.data:
-                shop.city.id = int(request.data.get("city"))
-
-            if "street" in request.data:
-                street_candidate = Street.objects.get(id=request.data.get("street"))
-                if street_candidate.city.id != int(shop.city.id):
-                    raise Exception("Улица не относится к указанному городу")
-                shop.street.id = int(request.data.get("street"))
-
-            if "open_time" in request.data:
-                if not is_valid_time(request.data.get("open_time")):
-                    raise Exception("Неправильный формат времени (open_time)")
-                shop.open_time = request.data.get("open_time")
-
-            if "close_time" in request.data:
-                if not is_valid_time(request.data.get("close_time")):
-                    raise Exception("Неправильный формат времени (close_time)")
-                shop.close_time = request.data.get("close_time")
-
-            if "name" in request.data:
-                shop.name = request.data.get("name")
-            if "house" in request.data:
-                shop.house = request.data.get("house")
-
-            data = ShopSerializer(shop).data
-            shop.save()
-            return Response(data, status=200)
+            obj = self.get_object()
+            serializer = ShopSerializer(obj, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            updated_shop = serializer.update(obj, serializer.validated_data)
+            return Response(ShopReturnSerializer(updated_shop).data, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
 
