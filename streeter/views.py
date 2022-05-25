@@ -7,6 +7,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework import filters
+from django.db.models import F, Expression, Q
 from .serializers import StreetSerializer, Street, ShopSerializer, Shop, CitySerializer, City, ShopReturnSerializer
 
 
@@ -61,7 +62,11 @@ class ShopViewSet(ModelViewSet):
             open_arg = query.get("open")
             if open_arg:
                 is_open = bool(int(open_arg))
-                shops = [shop for shop in shops if shop.is_open is is_open]
+                if is_open:
+                    shops = shops.extra(where=["localtime between open_time and close_time"])
+                else:
+                    shops = shops.extra(where=["localtime not between open_time and close_time"])
+                # shops = [shop for shop in shops if shop.is_open is is_open]
             data = ShopSerializer(shops, many=True).data
             return Response(data, status=200)
         else:
