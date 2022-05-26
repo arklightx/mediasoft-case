@@ -7,7 +7,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework import filters
-from django.db.models import F, Expression, Q
+from django.db.models import QuerySet
 from .serializers import StreetSerializer, Street, ShopSerializer, Shop, CitySerializer, City, ShopReturnSerializer
 
 
@@ -57,8 +57,6 @@ class ShopViewSet(ModelViewSet):
                 city__name__contains=query.get("city", ""),
                 street__name__contains=query.get("street", "")
             )
-            if ordered_by:
-                shops = shops.order_by(ordered_by)
             open_arg = query.get("open")
             if open_arg:
                 is_open = bool(int(open_arg))
@@ -66,6 +64,13 @@ class ShopViewSet(ModelViewSet):
                     shops = shops.raw("SELECT * FROM get_shops(true)")
                 else:
                     shops = shops.raw("SELECT * FROM get_shops(false)")
+            if ordered_by:
+                if open_arg:
+                    if ordered_by == "-id":
+                        shops = [shop for shop in shops]
+                        shops = shops[::-1]
+                else:
+                    shops = shops.order_by(ordered_by)
             data = ShopSerializer(shops, many=True).data
             return Response(data, status=200)
         else:
