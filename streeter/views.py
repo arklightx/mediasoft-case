@@ -62,10 +62,12 @@ class ShopViewSet(ModelViewSet):
             open_arg = query.get("open")
             if open_arg:
                 is_open = bool(int(open_arg))
-                if is_open:
-                    shops = shops.extra(where=["localtime between open_time and close_time"])
-                else:
-                    shops = shops.extra(where=["localtime not between open_time and close_time"])
+                current_date = datetime.datetime.now().time()
+                shops = shops.filter(open_time__lt=current_date, close_time__gt=current_date)
+                # if ...:
+                #     shops = shops.extra(where=["localtime between open_time and close_time"])
+                # else:
+                #     shops = shops.extra(where=["localtime not between open_time and close_time"])
                 # shops = [shop for shop in shops if shop.is_open is is_open]
             data = ShopSerializer(shops, many=True).data
             return Response(data, status=200)
@@ -74,6 +76,13 @@ class ShopViewSet(ModelViewSet):
 
     def create(self, request: Request, *args, **kwargs) -> Response:
         try:
+            open_time = datetime.datetime.strptime(request.data.get("open_time"), "%H:%M")
+            close_time = datetime.datetime.strptime(request.data.get("close_time"), "%H:%M")
+            if open_time > close_time:
+                close_time += datetime.timedelta(days=1)
+            # request.data["open_time"] = new_open_time
+            request.data["open_time"] = open_time
+            request.data["close_time"] = close_time
             serializer = super().get_serializer_class()
             serializer_instance: ShopSerializer = serializer(data=request.data)
             serializer_instance.is_valid(raise_exception=True)
