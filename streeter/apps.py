@@ -60,5 +60,4 @@ class StreeterConfig(AppConfig):
                 """)
                 cursor.close()
         except Exception as e:
-            print("Выполниться удачно во время запуска сервера")
-            # exit(1)
+            print("Выполнится удачно после применения миграций и запуска сервера")
